@@ -92,8 +92,6 @@ sealed class ShadowCastVisibility : MonoBehaviour
         var tiles = GameTiles.instance.tiles;
         List<Vector3Int> visibleTiles = PlayerFov.instance.visibleTiles;
         Color clear = new Color(1.0f, 1.0f, 1.0f, 0f);
-        Color grey = new Color(1.0f, 1.0f, 1.0f, 0.5f);
-        Color black = new Color(1.0f, 1.0f, 1.0f, 1f);
         if (!tiles.TryGetValue(pos, out _tile)) return;
             _tile.TilemapMember.SetTileFlags(_tile.LocalPlace, TileFlags.None);
             _tile.TilemapMember.SetColor(_tile.LocalPlace, clear);

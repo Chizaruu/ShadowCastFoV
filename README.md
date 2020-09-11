@@ -1,5 +1,5 @@
 # ShadowCastFoV
-Grid Based FoV
+Grid/Tilemap Based FoV
 
 Just press Play in Editor to test FoV out.
 

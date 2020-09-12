@@ -9,10 +9,10 @@ sealed class ShadowCastVisibility : MonoBehaviour
     //Based on code provided by Adam Milazzo from http://www.adammil.net/blog/v125_Roguelike_Vision_Algorithms.html#shadowcast
     //Modified for Unity Tilemaps by ChizaruuGCO.
 
-    static public void FovCompute(Vector3Int lPos, int rangeLimit, Tilemap wallMap, TileBase wall)
+    static public void FovCompute(Vector3Int lPos, int rangeLimit, Tilemap wallMap)
     {
         TileCompute(lPos);
-        for(uint octant=0; octant<=7; octant++) Compute(octant, lPos, rangeLimit, 1, new Slope(1, 1), new Slope(0, 1), wallMap, wall);
+        for(uint octant=0; octant<=7; octant++) Compute(octant, lPos, rangeLimit, 1, new Slope(1, 1), new Slope(0, 1), wallMap);
     }
 
     struct Slope // represents the slope Y/X as a rational number
@@ -21,7 +21,7 @@ sealed class ShadowCastVisibility : MonoBehaviour
         public readonly int Y, X;
     }
 
-    static void Compute(uint octant, Vector3Int lPos, int rangeLimit, int x, Slope top, Slope bottom, Tilemap wallMap, TileBase wall)
+    static void Compute(uint octant, Vector3Int lPos, int rangeLimit, int x, Slope top, Slope bottom, Tilemap wallMap)
     {
         for(; (uint)x <= (uint)rangeLimit; x++) // rangeLimit < 0 || x <= rangeLimit
         {
@@ -52,7 +52,7 @@ sealed class ShadowCastVisibility : MonoBehaviour
                 // NOTE: use the next line instead if you want the algorithm to be symmetrical
                 //if((y != topY || top.Y*x >= top.X*y) && (y != bottomY || bottom.Y*x <= bottom.X*y)) TileCompute(pos);
 
-                bool isOpaque = BlocksLight(pos, wallMap, wall);
+                bool isOpaque = BlocksLight(pos, wallMap);
                 if(x != rangeLimit)
                 {
                     if(isOpaque) 
@@ -61,7 +61,7 @@ sealed class ShadowCastVisibility : MonoBehaviour
                         {                  // adjust the bottom vector upwards and continue processing it in the next column.
                         Slope newBottom = new Slope(y*2+1, x*2-1); // (x*2-1, y*2+1) is a vector to the top-left of the opaque tile
                         if(y == bottomY) { bottom = newBottom; break; } // don't recurse unless we have to
-                        else Compute(octant, lPos, rangeLimit, x+1, top, newBottom, wallMap, wall);
+                        else Compute(octant, lPos, rangeLimit, x+1, top, newBottom, wallMap);
                         }
                         wasOpaque = 1;
                     }
@@ -77,9 +77,9 @@ sealed class ShadowCastVisibility : MonoBehaviour
         }
     }
 
-    static public bool BlocksLight(Vector3Int pos, Tilemap wallMap, TileBase wall){
+    static public bool BlocksLight(Vector3Int pos, Tilemap wallMap){
         
-        if(wallMap.GetTile(pos) == wall){
+        if(wallMap.GetTile(pos)){
             return true;
         }
         else{

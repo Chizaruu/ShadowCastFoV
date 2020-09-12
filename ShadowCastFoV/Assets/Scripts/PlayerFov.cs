@@ -12,7 +12,6 @@ public class PlayerFov : MonoBehaviour
     private WorldTile _tile;
 
     private Tilemap wallMap;
-    private TileBase wall;
 
     public int fovDistance = 7;
 
@@ -34,7 +33,6 @@ public class PlayerFov : MonoBehaviour
     void Start(){
         gameManager = GameManager.instance;
         wallMap = gameManager.wallTilemap;
-        wall = gameManager.wall;
         List<Vector3Int> visibleTiles = new List<Vector3Int>();
     }
     //Checks Player FoV
@@ -53,6 +51,6 @@ public class PlayerFov : MonoBehaviour
         }
         visibleTiles = new List<Vector3Int>();
 
-        ShadowCastVisibility.FovCompute(lPos, fovDistance, wallMap, wall);
+        ShadowCastVisibility.FovCompute(lPos, fovDistance, wallMap);
     }
 }   

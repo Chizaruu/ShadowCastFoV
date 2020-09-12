@@ -26,8 +26,6 @@ public class GameManager : MonoBehaviour {
     public Tilemap wallTilemap;
 	public Tilemap fogTilemap;
 
-	public TileBase wall;
-
 	public bool isMoving = false;
 
 	public float time = 0.2f;

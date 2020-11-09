@@ -9,10 +9,10 @@ sealed class ShadowCastVisibility : MonoBehaviour
     //Based on code provided by Adam Milazzo from http://www.adammil.net/blog/v125_Roguelike_Vision_Algorithms.html#shadowcast
     //Modified for Unity Tilemaps by ChizaruuGCO.
 
-    static public void FovCompute(Vector3Int lPos, int rangeLimit, Tilemap wallMap)
+    static public void FovCompute(Vector3Int lPos, int rangeLimit, Tilemap wallMap, Tilemap fogMap)
     {
-        TileCompute(lPos);
-        for(uint octant=0; octant<=7; octant++) Compute(octant, lPos, rangeLimit, 1, new Slope(1, 1), new Slope(0, 1), wallMap);
+        TileCompute(lPos, fogMap);
+        for(uint octant=0; octant<=7; octant++) Compute(octant, lPos, rangeLimit, 1, new Slope(1, 1), new Slope(0, 1), wallMap, fogMap);
     }
 
     struct Slope // represents the slope Y/X as a rational number
@@ -21,7 +21,7 @@ sealed class ShadowCastVisibility : MonoBehaviour
         public readonly int Y, X;
     }
 
-    static void Compute(uint octant, Vector3Int lPos, int rangeLimit, int x, Slope top, Slope bottom, Tilemap wallMap)
+    static void Compute(uint octant, Vector3Int lPos, int rangeLimit, int x, Slope top, Slope bottom, Tilemap wallMap, Tilemap fogMap)
     {
         for(; (uint)x <= (uint)rangeLimit; x++) // rangeLimit < 0 || x <= rangeLimit
         {
@@ -48,7 +48,7 @@ sealed class ShadowCastVisibility : MonoBehaviour
                 }
 
                 Vector3Int pos = new Vector3Int(tx, ty, 0);
-                TileCompute(pos);
+                TileCompute(pos, fogMap);
                 // NOTE: use the next line instead if you want the algorithm to be symmetrical
                 //if((y != topY || top.Y*x >= top.X*y) && (y != bottomY || bottom.Y*x <= bottom.X*y)) TileCompute(pos);
 
@@ -61,7 +61,7 @@ sealed class ShadowCastVisibility : MonoBehaviour
                         {                  // adjust the bottom vector upwards and continue processing it in the next column.
                         Slope newBottom = new Slope(y*2+1, x*2-1); // (x*2-1, y*2+1) is a vector to the top-left of the opaque tile
                         if(y == bottomY) { bottom = newBottom; break; } // don't recurse unless we have to
-                        else Compute(octant, lPos, rangeLimit, x+1, top, newBottom, wallMap);
+                        else Compute(octant, lPos, rangeLimit, x+1, top, newBottom, wallMap, fogMap);
                         }
                         wasOpaque = 1;
                     }
@@ -87,16 +87,16 @@ sealed class ShadowCastVisibility : MonoBehaviour
         }
     }
 
-    static public void TileCompute(Vector3Int pos){
+    static public void TileCompute(Vector3Int pos, Tilemap fogMap){
         WorldTile _tile;
         var tiles = GameTiles.instance.tiles;
         List<Vector3Int> visibleTiles = PlayerFov.instance.visibleTiles;
         Color clear = new Color(1.0f, 1.0f, 1.0f, 0f);
         if (!tiles.TryGetValue(pos, out _tile)) return;
-            _tile.TilemapMember.SetTileFlags(_tile.LocalPlace, TileFlags.None);
-            _tile.TilemapMember.SetColor(_tile.LocalPlace, clear);
-            _tile.IsVisible = true;
-            _tile.IsExplored = true;
+            fogMap.SetTileFlags(_tile.localPlace, TileFlags.None);
+            fogMap.SetColor(_tile.localPlace, clear);
+            _tile.isVisible = true;
+            _tile.isExplored = true;
             if(!visibleTiles.Contains(pos)) visibleTiles.Add(pos);
     }
 }

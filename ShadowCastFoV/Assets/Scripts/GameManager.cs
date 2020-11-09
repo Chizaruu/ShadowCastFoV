@@ -22,9 +22,9 @@ public class GameManager : MonoBehaviour {
 
 	public Grid grid;
 	
-    public Tilemap floorTilemap;
-    public Tilemap wallTilemap;
-	public Tilemap fogTilemap;
+    public Tilemap floorMap;
+    public Tilemap wallMap;
+	public Tilemap fogMap;
 
 	public bool isMoving = false;
 

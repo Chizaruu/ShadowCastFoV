@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.InputSystem;
-
 // From https://github.com/ChizaruuGCO/InputSystem-8DirectionMovement
 
 
@@ -17,6 +16,8 @@ public class PlayerController : MonoBehaviour
     
     //Input System
     private PlayerMovement controls;
+
+    public Animator animator;
 
     private PlayerFov playerFov;
     private GameManager gameManager;
@@ -37,8 +38,8 @@ public class PlayerController : MonoBehaviour
     {
         gameManager = GameManager.instance;
         grid = gameManager.grid;
-        floorTilemap = gameManager.floorTilemap;
-        wallTilemap = gameManager.wallTilemap;
+        floorTilemap = gameManager.floorMap;
+        wallTilemap = gameManager.wallMap;
         playerFov = PlayerFov.instance;
         StartCoroutine(Position());
 
@@ -103,6 +104,8 @@ public class PlayerController : MonoBehaviour
         if (!CanMove(vec)) return;
         //Checks if next movement will be same position.
         if(futurevec == transform.position) return;
+        animator.SetFloat("x", vec.x);
+        animator.SetFloat("y", vec.y);
         transform.position += vec;
         gameManager.isMoving = true;
         StartCoroutine(Position());

@@ -13,6 +13,8 @@ public class PlayerFov : MonoBehaviour
 
     private Tilemap wallMap;
 
+    private Tilemap fogMap;
+
     public int fovDistance = 7;
 
     public List<Vector3Int> visibleTiles;
@@ -32,7 +34,8 @@ public class PlayerFov : MonoBehaviour
         
     void Start(){
         gameManager = GameManager.instance;
-        wallMap = gameManager.wallTilemap;
+        wallMap = gameManager.wallMap;
+        fogMap = gameManager.fogMap;
         List<Vector3Int> visibleTiles = new List<Vector3Int>();
     }
     //Checks Player FoV
@@ -40,17 +43,18 @@ public class PlayerFov : MonoBehaviour
         Color grey = new Color(1.0f, 1.0f, 1.0f, 0.5f);
         WorldTile _tile;
         var tiles = GameTiles.instance.tiles;
+        
         //Removes visibleTiles.
         foreach (Vector3Int visibleTile in visibleTiles) {
             if (!tiles.TryGetValue(visibleTile, out _tile)) return;
-            if(_tile.IsVisible){
-                _tile.IsVisible = false;
-                _tile.TilemapMember.SetTileFlags(_tile.LocalPlace, TileFlags.None);
-                _tile.TilemapMember.SetColor(_tile.LocalPlace, grey);
+            if(_tile.isVisible){
+                _tile.isVisible = false;
+                fogMap.SetTileFlags(_tile.localPlace, TileFlags.None);
+                fogMap.SetColor(_tile.localPlace, grey);
             }
         }
         visibleTiles = new List<Vector3Int>();
 
-        ShadowCastVisibility.FovCompute(lPos, fovDistance, wallMap);
+        ShadowCastVisibility.FovCompute(lPos, fovDistance, wallMap, fogMap);
     }
 }   

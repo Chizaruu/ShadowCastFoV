@@ -34,15 +34,13 @@ public class GameTiles : MonoBehaviour {
                 if (!fogMap.HasTile(lPos)) continue;
                 var tile = new WorldTile
                 {
-                    LocalPlace = lPos,
-                    GridLocation = fogMap.CellToWorld(lPos),
-                    TileBase = fogMap.GetTile(lPos),
-                    TilemapMember = fogMap,
-                    Name = lPos.x + "," + lPos.y,
-					IsVisible = false,
-					IsExplored = false,
+                    localPlace = lPos,
+                    gridLocation = fogMap.CellToWorld(lPos),
+                    tileBase = fogMap.GetTile(lPos),
+					isVisible = false,
+					isExplored = false,
 			    };
-                tiles.Add(tile.GridLocation, tile);
+                tiles.Add(tile.gridLocation, tile);
 		}        
 	}
 }

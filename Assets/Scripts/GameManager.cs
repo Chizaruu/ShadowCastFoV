@@ -1,49 +1,43 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
-public class GameManager : MonoBehaviour {
+/// <summary> The GameManager is the main controller of the game. It handles the game state and the game flow. </summary>
+public class GameManager : MonoBehaviour
+{
+	public static GameManager instance; //Singleton
 
-	public static GameManager instance;
-	private PlayerController player;
+	[SerializeField]private float time = 0.075f;	//Time between each frame
 
-	void Awake()
+	[SerializeField]private bool isPlaying = false; //Is the game currently playing?
+	[SerializeField]private bool diagonalMovement = true; //true = diagonal movement, false = no diagonal movement
+
+    public bool IsPlaying { get => isPlaying; set => isPlaying = value; } //Is the game currently playing?
+	public bool DiagonalMovement { get => diagonalMovement; set => diagonalMovement = value; } //true = diagonal movement, false = no diagonal movement
+
+	/// <summary> Awake is called when the script instance is being loaded. </summary>
+	private void Awake()
 	{
-		if(instance != null)
+		if (instance == null) //If instance is not assigned
 		{
-			Debug.LogWarning("More than 1 instance of GameManager");
-			return;
+			instance = this; //Assign instance to this
 		}
-		instance = this;
-	}
-
-	//use this Tilemap for all other scripts to access the tilemap
-
-	public Grid grid;
-	
-    public Tilemap floorMap;
-    public Tilemap wallMap;
-	public Tilemap fogMap;
-
-	public bool isMoving = false;
-
-	public float time = 0.2f;
-
-	// Use this for initialization
-	void Start (){
-		player = GameObject.FindWithTag("Player").GetComponent<PlayerController>();
-	}
-
+		else //else no need for this gameobject!
+		{
+			Destroy(gameObject); //Destroy this gameobject
+		}
+	} 
+    
+	/// <summary> This function is called when the player ends its turn. </summary>
 	public void TurnChange()
 	{
-			StartCoroutine(waiting());
-			isMoving = true;
+		isPlaying = true; //Set isPlaying to true
+		StartCoroutine(waiting()); //Start waiting coroutine
 	}
 
-	IEnumerator waiting()
+	/// <summary> Coroutine to wait for a certain amount of time. </summary>
+	private IEnumerator waiting() 
 	{
-		yield return new WaitForSeconds(time);
-		isMoving = false;
+		yield return new WaitForSeconds(time); //Wait for time
+		isPlaying = false; //Set isPlaying to false
 	}
 }

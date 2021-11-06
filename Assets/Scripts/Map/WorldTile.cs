@@ -2,6 +2,7 @@
 
 namespace SCF.Map
 {
+    /// <summary> A tile in the world. </summary>
     [System.Serializable]
     public class WorldTile{
         public string tileBase;

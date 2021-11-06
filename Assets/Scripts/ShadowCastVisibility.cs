@@ -4,24 +4,49 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+/// <summary> Shadow Cast Visibility Algorithm. </summary>
 sealed class ShadowCastVisibility : MonoBehaviour
 {
-    //Based on code provided by Adam Milazzo from http://www.adammil.net/blog/v125_Roguelike_Vision_Algorithms.html#shadowcast
-    //Modified for Unity Tilemaps by ChizaruuGCO.
+    //The original code is public domain, and is available at:
+    //http://www.adammil.net/blog/v125_Roguelike_Vision_Algorithms.html#shadowcast
 
-    static public void FovCompute(Vector3Int lPos, int rangeLimit, Tilemap wallMap, Tilemap fogMap)
+    //The original code is modified by ChizaruuGCO to work with Unity Tilemaps and RLSKTD.
+
+    /// <summary> Field of View is computed using a shadow cast algorithm. </summary>
+    /// <param name="lPos"> The local position of the character. </param>
+    /// <param name="rangeLimit"> The range limit for the field of view. </param>
+    /// <param name="obstacleMap"> The obstacle map. </param>
+    /// <param name="fogMap"> The fog map. </param>
+    /// <param name="isPlayer"> Is the character the player? </param>
+    /// <param name="fov"> The field of view. </param>
+    /// <param name="isSymmetrical"> Is the field of view symmetrical? </param>
+    /// <returns> The field of view. </returns>
+    static public void FovCompute(Vector3Int lPos, int rangeLimit, Tilemap obstacleMap, Tilemap fogMap, bool isPlayer, FOV fov, bool isSymmetrical)
     {
-        TileCompute(lPos, fogMap);
-        for(uint octant=0; octant<=7; octant++) Compute(octant, lPos, rangeLimit, 1, new Slope(1, 1), new Slope(0, 1), wallMap, fogMap);
+        TileCompute(lPos, fogMap, isPlayer, fov);
+        for(uint octant=0; octant<=7; octant++) Compute(octant, lPos, rangeLimit, 1, new Slope(1, 1), new Slope(0, 1), obstacleMap, fogMap, isPlayer, fov, isSymmetrical);
     }
 
-    struct Slope // represents the slope Y/X as a rational number
+    /// <summary> Slope is used to represent the slope Y/X as a rational number. </summary>
+    struct Slope
     {
         public Slope(int y, int x) { Y=y; X=x; }
         public readonly int Y, X;
     }
 
-    static void Compute(uint octant, Vector3Int lPos, int rangeLimit, int x, Slope top, Slope bottom, Tilemap wallMap, Tilemap fogMap)
+    /// <summary> Compute the field of view for a given octant. </summary>
+    /// <param name="octant"> The octant. </param>
+    /// <param name="lPos"> The local position of the character. </param>
+    /// <param name="rangeLimit"> The range limit for the field of view. </param>
+    /// <param name="top"> The top of the slope. </param>
+    /// <param name="bottom"> The bottom of the slope. </param>
+    /// <param name="obstacleMap"> The obstacle map. </param>
+    /// <param name="fogMap"> The fog map. </param>
+    /// <param name="isPlayer"> Is the character the player? </param>
+    /// <param name="fov"> The field of view. </param>
+    /// <param name="isSymmetrical"> Is the field of view symmetrical? </param>
+    /// <returns> The field of view of a given octant. </returns>
+    static void Compute(uint octant, Vector3Int lPos, int rangeLimit, int x, Slope top, Slope bottom, Tilemap obstacleMap, Tilemap fogMap, bool isPlayer, FOV fov, bool isSymmetrical)
     {
         for(; (uint)x <= (uint)rangeLimit; x++) // rangeLimit < 0 || x <= rangeLimit
         {
@@ -32,10 +57,12 @@ sealed class ShadowCastVisibility : MonoBehaviour
             int bottomY = bottom.Y == 0 ? 0 : ((x*2-1) * bottom.Y + bottom.X) / (bottom.X*2);
             
             int wasOpaque = -1; // 0:false, 1:true, -1:not applicable
+            // compute the top and bottom vectors for the next column
             for(int y=topY; y >= bottomY; y--)
-            {
+            {   
                 int tx = lPos.x, ty = lPos.y;
-                switch(octant) // translate local coordinates to map coordinates
+                // compute the coordinates of the tile at the top of the column
+                switch(octant)
                 {
                     case 0: tx += x; ty -= y; break;
                     case 1: tx += y; ty -= x; break;
@@ -47,21 +74,26 @@ sealed class ShadowCastVisibility : MonoBehaviour
                     case 7: tx += x; ty += y; break;
                 }
 
-                Vector3Int pos = new Vector3Int(tx, ty, 0);
-                TileCompute(pos, fogMap);
+                Vector3Int pos = new Vector3Int(tx, ty, 0); // the position of the tile at the top of the column
+                TileCompute(pos, fogMap, isPlayer, fov);
                 // NOTE: use the next line instead if you want the algorithm to be symmetrical
-                //if((y != topY || top.Y*x >= top.X*y) && (y != bottomY || bottom.Y*x <= bottom.X*y)) TileCompute(pos);
+                if(isSymmetrical)
+                {
+                    if((y != topY || top.Y*x >= top.X*y) && (y != bottomY || bottom.Y*x <= bottom.X*y)) TileCompute(pos, fogMap, isPlayer, fov);
+                }
 
-                bool isOpaque = BlocksLight(pos, wallMap);
+                bool isOpaque = obstacleMap.GetTile(pos) != null;
+                
                 if(x != rangeLimit)
                 {
+
                     if(isOpaque) 
                     {            
                         if(wasOpaque == 0) // if we found a transition from clear to opaque, this sector is done in this column, so
                         {                  // adjust the bottom vector upwards and continue processing it in the next column.
                         Slope newBottom = new Slope(y*2+1, x*2-1); // (x*2-1, y*2+1) is a vector to the top-left of the opaque tile
                         if(y == bottomY) { bottom = newBottom; break; } // don't recurse unless we have to
-                        else Compute(octant, lPos, rangeLimit, x+1, top, newBottom, wallMap, fogMap);
+                        else Compute(octant, lPos, rangeLimit, x+1, top, newBottom, obstacleMap, fogMap, isPlayer, fov, isSymmetrical);
                         }
                         wasOpaque = 1;
                     }
@@ -77,26 +109,21 @@ sealed class ShadowCastVisibility : MonoBehaviour
         }
     }
 
-    static public bool BlocksLight(Vector3Int pos, Tilemap wallMap){
-        
-        if(wallMap.GetTile(pos)){
-            return true;
-        }
-        else{
-            return false;
-        }
-    }
+    /// <summary> Set the fog of war for a given tile. </summary>
+    static public void TileCompute(Vector3Int pos, Tilemap fogMap, bool isPlayer, FOV fov)
+    {
+        WorldTile tile;
 
-    static public void TileCompute(Vector3Int pos, Tilemap fogMap){
-        WorldTile _tile;
-        var tiles = GameTiles.instance.tiles;
-        List<Vector3Int> visibleTiles = PlayerFov.instance.visibleTiles;
-        Color clear = new Color(1.0f, 1.0f, 1.0f, 0f);
-        if (!tiles.TryGetValue(pos, out _tile)) return;
-            fogMap.SetTileFlags(_tile.localPlace, TileFlags.None);
-            fogMap.SetColor(_tile.localPlace, clear);
-            _tile.isVisible = true;
-            _tile.isExplored = true;
-            if(!visibleTiles.Contains(pos)) visibleTiles.Add(pos);
+        if (!MapManager.instance.fogTiles.TryGetValue(pos, out tile)) return;
+
+            if(isPlayer)
+            {
+                fogMap.SetTileFlags(tile.localPlace, TileFlags.None);
+                fogMap.SetColor(tile.localPlace, new Color(1.0f, 1.0f, 1.0f, 0f));
+                tile.isVisible = true;
+                tile.isExplored = true;
+            }
+
+            if(!fov.VisibleTiles.Contains(pos)) fov.VisibleTiles.Add(pos);
     }
 }

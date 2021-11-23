@@ -1,4 +1,6 @@
 # ShadowCastFoV
+Archived. Go to https://github.com/Chizaruu/UnityTilemapGuide for updates and support.
+
 Grid/Tilemap Based FoV
 
 Just press Play in Editor to test FoV out.
